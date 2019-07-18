@@ -6,7 +6,7 @@ import sys
 from nmt import train
 
 def main(job_id, params):
-    print params
+    print(params)
     validerr = train(saveto=params['model'][0],
                      bn_saveto=params['bn_model'][0],
                      reload_=params['reload'][0],

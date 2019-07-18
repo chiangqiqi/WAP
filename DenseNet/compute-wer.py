@@ -3,8 +3,8 @@ import os
 import numpy
 def cmp_result(label,rec):
     dist_mat = numpy.zeros((len(label)+1, len(rec)+1),dtype='int32')
-    dist_mat[0,:] = range(len(rec) + 1)
-    dist_mat[:,0] = range(len(label) + 1)
+    dist_mat[0,:] = list(range(len(rec) + 1))
+    dist_mat[:,0] = list(range(len(label) + 1))
     for i in range(1, len(label) + 1):
         for j in range(1, len(rec) + 1):
             hit_score = dist_mat[i-1, j-1] + (label[i-1] != rec[j-1])
@@ -53,6 +53,6 @@ def process(recfile, labelfile, resultfile):
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
-        print 'compute-wer.py recfile labelfile resultfile'
+        print('compute-wer.py recfile labelfile resultfile')
         sys.exit(0)
     process(sys.argv[1], sys.argv[2], sys.argv[3])

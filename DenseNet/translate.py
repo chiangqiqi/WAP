@@ -6,7 +6,7 @@ import argparse
 import theano
 import theano.tensor as tensor
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
-import cPickle as pkl
+import pickle as pkl
 import numpy
 import copy
 import pprint
@@ -54,7 +54,7 @@ def gen_sample(f_init, f_next, x, options, trng=None, k=1, maxlen=30,
     next_w = -1 * numpy.ones((1,)).astype('int64')  # bos indicator
     next_alpha_past = 0.0 * numpy.ones((1, ctx0.shape[2], ctx0.shape[3])).astype('float32') # start position
 
-    for ii in xrange(maxlen):
+    for ii in range(maxlen):
         ctx = numpy.tile(ctx0, [live_k, 1, 1, 1])
         inps = [next_w, ctx, next_state, next_alpha_past]
         ret = f_next(*inps)
@@ -83,6 +83,7 @@ def gen_sample(f_init, f_next, x, options, trng=None, k=1, maxlen=30,
             new_hyp_states = []
             new_hyp_alpha_past = []
             for idx, [ti, wi] in enumerate(zip(trans_indices, word_indices)):
+                ti,wi = int(ti), int(wi)
                 new_hyp_samples.append(hyp_samples[ti]+[wi])
                 new_hyp_scores[idx] = copy.copy(costs[idx])
                 new_hyp_states.append(copy.copy(next_state[ti]))
@@ -95,7 +96,7 @@ def gen_sample(f_init, f_next, x, options, trng=None, k=1, maxlen=30,
             hyp_states = []
             hyp_alpha_past = []
 
-            for idx in xrange(len(new_hyp_samples)):
+            for idx in range(len(new_hyp_samples)):
                 if new_hyp_samples[idx][-1] == 0: # <eol>
                     sample.append(new_hyp_samples[idx])
                     sample_score.append(new_hyp_scores[idx])
@@ -121,7 +122,7 @@ def gen_sample(f_init, f_next, x, options, trng=None, k=1, maxlen=30,
     if not stochastic:
         # dump every remaining one
         if live_k > 0:
-            for idx in xrange(live_k):
+            for idx in range(live_k):
                 sample.append(hyp_samples[idx])
                 sample_score.append(hyp_scores[idx])
 
@@ -137,7 +138,7 @@ def main(model, bn_model, dictionary_target, fea, latex, saveto, output, k=5):
     # load source dictionary and invert
     worddicts = load_dict(dictionary_target)
     worddicts_r = [None] * len(worddicts)
-    for kk, vv in worddicts.iteritems():
+    for kk, vv in list(worddicts.items()):
         worddicts_r[vv] = kk
 
     valid, valid_uid_list = dataIterator(fea, latex, worddicts,
@@ -163,10 +164,10 @@ def main(model, bn_model, dictionary_target, fea, latex, saveto, output, k=5):
     fpp_sample=open(saveto, 'w')
     valid_count_idx=0
     # FIXME: random selection?
-    print 'Decoding ... '
+    print('Decoding ... ')
     for x, y in valid:
         for xx in x:
-            print '%d : %s' % (valid_count_idx+1, valid_uid_list[valid_count_idx])
+            print(('%d : %s' % (valid_count_idx+1, valid_uid_list[valid_count_idx])))
             xx_pad = numpy.zeros((xx.shape[0],xx.shape[1],xx.shape[2]), dtype='float32') # input_channels * height * width
             xx_pad[:,:, :] = xx / 255.
             stochastic = False
@@ -191,7 +192,7 @@ def main(model, bn_model, dictionary_target, fea, latex, saveto, output, k=5):
                 fpp_sample.write(' '+worddicts_r[vv])
             fpp_sample.write('\n')
     fpp_sample.close()
-    print 'test set decode done'
+    print('test set decode done')
 
     os.system('python compute-wer.py ' + saveto + ' ' + latex + ' ' + output)
     fpp=open(output) # %WER 31.63
@@ -202,7 +203,7 @@ def main(model, bn_model, dictionary_target, fea, latex, saveto, output, k=5):
     m=re.search('ExpRate (.*)\n',stuff[1])
     valid_sacc=100. * float(m.group(1))
 
-    print 'Valid WER: %.2f%%, ExpRate: %.2f%%' % (valid_per,valid_sacc)
+    print(('Valid WER: %.2f%%, ExpRate: %.2f%%' % (valid_per,valid_sacc)))
 
 
 if __name__ == "__main__":
