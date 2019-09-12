@@ -243,7 +243,7 @@ def param_init_DenseNet(rng, options, params, prefix='dense'):
     params[_p(_p(prefix, name), 'bn_beta')] = bn_beta[None, :, None, None]
     k = options['GrowthRate']
     dense_channels = options['channel_conv1']
-    for block in range(len(options['DenseBlock'])):        
+    for block in range(len(options['DenseBlock'])):
         for level in range(options['DenseBlock'][block]):
             if options['Bottleneck']:
                 name = 'B_b{}_l{}'.format(block, level)
@@ -289,7 +289,7 @@ def init_bn_params(options):
     params[_p(_p(prefix, name), 'bn_var')] = bn_var[None, :, None, None]
     k = options['GrowthRate']
     dense_channels = options['channel_conv1']
-    for block in range(len(options['DenseBlock'])):        
+    for block in range(len(options['DenseBlock'])):
         for level in range(options['DenseBlock'][block]):
             if options['Bottleneck']:
                 name = 'B_b{}_l{}'.format(block, level)
@@ -309,7 +309,7 @@ def init_bn_params(options):
                 bn_var = numpy.ones((k)).astype('float32')
                 params[_p(_p(prefix, name), 'bn_var')] = bn_var[None, :, None, None]
             dense_channels += k
-        
+
         if block < len(options['DenseBlock']) - 1:
             compress_channels = int(dense_channels * options['Transition'])
             name = 'C_b{}'.format(block)
@@ -416,7 +416,7 @@ def param_init_gru_cond(rng, options, params, prefix='gru_cond',
 
 def gru_cond_layer(tparams, state_below, options, prefix='gru',
                    mask=None, context=None, one_step=False,
-                   init_memory=None, init_state=None, alpha_past=None, 
+                   init_memory=None, init_state=None, alpha_past=None,
                    context_mask=None,
                    **kwargs):
 
@@ -493,7 +493,7 @@ def gru_cond_layer(tparams, state_below, options, prefix='gru',
         alpha_past__ = alpha_past_[:,None,:,:]
         cover_F = theano.tensor.nnet.conv2d(alpha_past__,conv_Q,border_mode='half') # batch x dim x height x width
         cover_F = cover_F.dimshuffle(2, 3, 0, 1) # height * width * batch * dim
-        
+
         assert cover_F.ndim == 4, \
             'Output of conv must be 4-d: height x width x batch x dimnonlin'
         cover_vector = tensor.dot(cover_F, conv_Uf) + conv_b
@@ -644,10 +644,9 @@ def build_model(tparams, bn_tparams, options):
     dense_oup = oup
     x_mask = x_mask[:,0::2,0::2]
 
-    for block in range(len(options['DenseBlock'])):        
+    for block in range(len(options['DenseBlock'])):
         for level in range(options['DenseBlock'][block]):
             if options['Bottleneck']:
-                
                 name = 'B_b{}_l{}'.format(block, level)
                 conv_filter = tparams[_p('dense', name)]
                 oup = theano.tensor.nnet.conv2d(oup, conv_filter, border_mode='valid', subsample=(1,1))
@@ -660,7 +659,7 @@ def build_model(tparams, bn_tparams, options):
                 oup = tensor.nnet.relu(oup)
                 if options['use_dropout']:
                     oup = dropout_layer(oup, 0.2, use_noise,trng)
-                
+
                 name = 'b{}_l{}'.format(block, level)
                 conv_filter = tparams[_p('dense', name)]
                 oup = theano.tensor.nnet.conv2d(oup, conv_filter, border_mode='half', subsample=(1,1))
@@ -687,7 +686,7 @@ def build_model(tparams, bn_tparams, options):
                 oup = tensor.nnet.relu(oup)
                 if options['use_dropout']:
                     oup = dropout_layer(oup, 0.2, use_noise,trng)
-            
+
             dense_oup = concatenate([dense_oup, oup], axis=1)
             oup = dense_oup
 
@@ -766,7 +765,7 @@ def build_model(tparams, bn_tparams, options):
 
     if options['use_dropout']:
         logit = dropout_layer(logit, 0.2, use_noise, trng)
-    logit = get_layer('ff')[1](tparams, logit, options, 
+    logit = get_layer('ff')[1](tparams, logit, options,
                                prefix='ff_logit', activ='linear')
     logit_shp = logit.shape
     probs = tensor.nnet.softmax(logit.reshape([logit_shp[0]*logit_shp[1],
@@ -775,7 +774,7 @@ def build_model(tparams, bn_tparams, options):
     # cost
     cost = tensor.nnet.categorical_crossentropy(probs, y.flatten()) # x is a vector,each value is a 1-of-N position 
     cost = cost.reshape([y.shape[0], y.shape[1]])
-    cost = (cost * y_mask).sum(0) 
+    cost = (cost * y_mask).sum(0)
 
     return trng, use_noise, x, x_mask_original, y, y_mask, opt_ret, cost
 
@@ -802,10 +801,10 @@ def build_sampler(tparams, bn_tparams, options, trng, use_noise):
     oup = pool.pool_2d(oup,(2,2),ignore_border=False,stride=(2,2),pad=(0,0),mode='max')
     dense_oup = oup
 
-    for block in range(len(options['DenseBlock'])):        
+    for block in range(len(options['DenseBlock'])):
         for level in range(options['DenseBlock'][block]):
             if options['Bottleneck']:
-                
+
                 name = 'B_b{}_l{}'.format(block, level)
                 conv_filter = tparams[_p('dense', name)]
                 oup = theano.tensor.nnet.conv2d(oup, conv_filter, border_mode='valid', subsample=(1,1))
@@ -817,7 +816,7 @@ def build_sampler(tparams, bn_tparams, options, trng, use_noise):
                 oup = tensor.nnet.relu(oup)
                 if options['use_dropout']:
                     oup = dropout_layer(oup, 0.2, use_noise,trng)
-                
+
                 name = 'b{}_l{}'.format(block, level)
                 conv_filter = tparams[_p('dense', name)]
                 oup = theano.tensor.nnet.conv2d(oup, conv_filter, border_mode='half', subsample=(1,1))
@@ -842,7 +841,7 @@ def build_sampler(tparams, bn_tparams, options, trng, use_noise):
                 oup = tensor.nnet.relu(oup)
                 if options['use_dropout']:
                     oup = dropout_layer(oup, 0.2, use_noise,trng)
-            
+
             dense_oup = concatenate([dense_oup, oup], axis=1)
             oup = dense_oup
 
@@ -934,11 +933,13 @@ def build_sampler(tparams, bn_tparams, options, trng, use_noise):
     return f_init, f_next
 
 
-# generate sample, either with stochastic sampling or beam search. Note that,
-# this function iteratively calls f_init and f_next functions.
+
 def gen_sample(tparams, f_init, f_next, x, options, trng=None, k=1, maxlen=30,
                stochastic=True, argmax=False):
-
+    """
+    generate sample, either with stochastic sampling or beam search. Note that,
+    this function iteratively calls f_init and f_next functions.
+    """
     # k is the beam size we have
     if k > 1:
         assert not stochastic, \
@@ -1061,19 +1062,6 @@ def pred_probs(f_log_probs, prepare_data, options, iterator, verbose=False):
     return numpy.array(probs)
 
 
-def load_dict(dictFile):
-    fp=open(dictFile)
-    stuff=fp.readlines()
-    fp.close()
-    lexicon={}
-    for l in stuff:
-        w=l.strip().split()
-        lexicon[w[0]]=int(w[1])
-
-    print('total words/phones',len(lexicon))
-    return lexicon
-
-
 
 
 def train(dim_word=100,  # word vector dimensionality
@@ -1114,7 +1102,7 @@ def train(dim_word=100,  # word vector dimensionality
           sampleFreq=100,   # generate some samples after every sampleFreq
           datasets=['feature.pkl',
                     'label.txt'],
-          valid_datasets=['feature_valid.pkl', 
+          valid_datasets=['feature_valid.pkl',
                           'label_valid.txt'],
           dictionaries=['lexicon.txt'],
           valid_output=['decode.txt'],
@@ -1127,10 +1115,6 @@ def train(dim_word=100,  # word vector dimensionality
 
     # load dictionaries and invert them
 
-    worddicts = load_dict(dictionaries[0])
-    worddicts_r = [None] * len(worddicts)
-    for kk, vv in worddicts.items():
-        worddicts_r[vv] = kk
 
     # reload options
     if reload_ and os.path.exists(saveto):
@@ -1140,10 +1124,8 @@ def train(dim_word=100,  # word vector dimensionality
     print('Loading data')
 
     train,train_uid_list = dataIterator(datasets[0], datasets[1],
-                         worddicts,
                          batch_size=batch_size, batch_Imagesize=batch_Imagesize,maxlen=maxlen,maxImagesize=maxImagesize)
     valid,valid_uid_list = dataIterator(valid_datasets[0], valid_datasets[1],
-                         worddicts,
                          batch_size=valid_batch_size, batch_Imagesize=valid_batch_Imagesize,maxlen=maxlen,maxImagesize=maxImagesize)
 
     print('Building model')
@@ -1220,13 +1202,10 @@ def train(dim_word=100,  # word vector dimensionality
     f_grad_shared, f_update = eval(optimizer)(lr, tparams, bn_tparams, opt_ret, grads, inps, cost)
     print('Done')
 
-    
-    
     # print model parameters
     print("Model params:\n{0}".format(
             pprint.pformat(sorted([p for p in params]))))
     # end
-
 
 
     print('Optimization')
@@ -1281,7 +1260,6 @@ def train(dim_word=100,  # word vector dimensionality
 
             ud = time.time() - ud_start
             ud_s += ud
-            
 
             # check for bad numbers, usually we remove non-finite elements
             # and continue training - but not done here
@@ -1330,7 +1308,7 @@ def train(dim_word=100,  # word vector dimensionality
                                                    maxlen=1000,
                                                    stochastic=stochastic,
                                                    argmax=False)
-                        
+
                         if stochastic:
                             ss = sample
                         else:
@@ -1342,7 +1320,7 @@ def train(dim_word=100,  # word vector dimensionality
                         for vv in ss:
                             if vv == 0: # <eol>
                                 break
-                            fpp_sample.write(' '+worddicts_r[vv])
+                            # fpp_sample.write(' '+worddicts_r[vv])
                         fpp_sample.write('\n')
                 fpp_sample.close()
                 print('valid set decode done')
@@ -1358,14 +1336,13 @@ def train(dim_word=100,  # word vector dimensionality
                 valid_errs = pred_probs(f_log_probs, prepare_data,
                                         model_options, valid)
                 valid_err_cost = valid_errs.mean()
-                
 
                 # compute wer
                 os.system('python compute-wer.py ' + valid_output[0] + ' ' + valid_datasets[1] + ' ' + valid_result[0])
-                fpp=open(valid_result[0])
-                stuff=fpp.readlines()
-                fpp.close()
+                with open(valid_result[0]) as fpp:
+                    stuff=fpp.readlines()
                 m=re.search('WER (.*)\n',stuff[0])
+
                 valid_per=100. * float(m.group(1))
                 m=re.search('ExpRate (.*)\n',stuff[1])
                 valid_sacc=100. * float(m.group(1))
